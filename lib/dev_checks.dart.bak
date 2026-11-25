@@ -1,0 +1,57 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+
+import 'core/api/api_client.dart';
+import 'core/api/api_exception.dart';
+import 'features/users/user.dart';
+import 'features/users/user_repository.dart';
+
+/// Level 2 check: no screen, no network. Real JSON of user 1 from Postman.
+void runLevel2Check() {
+  const raw = r'''
+{
+  "id": 1,
+  "name": "Leanne Graham",
+  "username": "Bret",
+  "email": "Sincere@april.biz",
+  "address": {
+    "street": "Kulas Light",
+    "suite": "Apt. 556",
+    "city": "Gwenborough",
+    "zipcode": "92998-3874",
+    "geo": {"lat": "-37.3159", "lng": "81.1496"}
+  },
+  "phone": "1-770-736-8031 x56442",
+  "website": "hildegard.org",
+  "company": {
+    "name": "Romaguera-Crona",
+    "catchPhrase": "Multi-layered client-server neural-net",
+    "bs": "harness real-time e-markets"
+  }
+}
+''';
+  final user = User.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+  debugPrint('$user');
+  debugPrint('digits: ${user.phoneDigits}');
+  debugPrint('round trip equal: ${User.fromJson(user.toJson()) == user}');
+}
+
+/// Level 3 check: getAll, getById(999), create. Call before runApp.
+Future<void> runLevel3Check() async {
+  final repo = UserRepository(ApiClient.live());
+
+  final users = await repo.getAll();
+  debugPrint('getAll: ${users.map((u) => u.name).toList()}');
+
+  try {
+    await repo.getById(999);
+  } on NotFoundException {
+    debugPrint('not found');
+  }
+
+  final created = await repo.create(
+    User.draft(name: 'Test User', username: 'test', email: 'test@mail.com'),
+  );
+  debugPrint('created id: ${created.id}'); // expected 11
+}
